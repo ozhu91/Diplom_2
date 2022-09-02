@@ -3,6 +3,10 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### Allure
+.allure
+!target/allure-results/
+
 ### IntelliJ IDEA ###
 .idea
 .idea/modules.xml
