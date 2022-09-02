@@ -4,8 +4,7 @@ target/
 !**/src/test/**/target/
 
 ### Allure
-.allure
-!target/allure-results/
+!/target/allure-results/
 
 ### IntelliJ IDEA ###
 .idea
