@@ -1,10 +1,15 @@
-target/
+.allure/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### Allure
-!/target/allure-results/
+### Target
+target/classes
+target/generated-test-sources
+target/generated-sources
+target/maven-status
+target/surefire-reports
+target/test-classes
 
 ### IntelliJ IDEA ###
 .idea
