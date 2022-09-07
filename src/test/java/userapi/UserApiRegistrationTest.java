@@ -8,6 +8,7 @@ import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.response.Response;
+import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -21,6 +22,12 @@ public class UserApiRegistrationTest extends UserApiPrototype {
     @Rule
     public Timeout globalTimeout =  Timeout.seconds(0);
 
+    String email = "zhumzhumreg@mail.ru";
+
+    String password = "12345";
+
+    String name = "Oleg";
+
     @BeforeClass
     public static void setUp() {
         RestAssured.baseURI = "https://stellarburgers.nomoreparties.site";
@@ -29,21 +36,31 @@ public class UserApiRegistrationTest extends UserApiPrototype {
                 .filter(new AllureRestAssured());
     }
 
+    @After
+    public void methodAfter() {
+        Response login = UserLoginRequest(new UserAuthorizationData( email, password));
+        String accessToken;
+        if(login.thenReturn().body().as(UserAuthorizationData.class).getSuccess() == false) {
+            Response registrationRequest = UserRegisterRequest(new UserAuthorizationData(email, password, name));
+            accessToken = registrationRequest.thenReturn().body().as(UserAuthorizationData.class).getAccessToken();
+        } else {
+            accessToken = login.thenReturn().body().as(UserAuthorizationData.class).getAccessToken();
+        }
+        DeleteUserRequest(accessToken);
+    }
+
     @Test
     @DisplayName("Test registration user")
     @Severity(SeverityLevel.BLOCKER)
     @Description("Проверка регистрации пользователя")
     public void TestRegistrationNewUser() {
-        Response registrationRequest = UserRegisterRequest(new UserAuthorizationData("zhumzhumreg@mail.ru", "12345", "oleg"));
+        Response registrationRequest = UserRegisterRequest(new UserAuthorizationData(email, password, name));
         registrationRequest
                 .then()
                 .statusCode(200)
                 .and()
                 .assertThat()
                 .body("success", equalTo(true));
-        Response authRequest = UserLoginRequest(new UserAuthorizationData("zhumzhumreg@mail.ru", "12345"));
-        String accessToken = authRequest.body().as(UserAuthorizationData.class).getAccessToken();
-        DeleteUserRequest(accessToken);
     }
 
     @Test
@@ -51,8 +68,8 @@ public class UserApiRegistrationTest extends UserApiPrototype {
     @Severity(SeverityLevel.CRITICAL)
     @Description("Проверка регистрации уже зарегистрированного пользователя")
     public void TestRegistrationCreatedUser(){
-        UserRegisterRequest(new UserAuthorizationData("zhumzhumreg@mail.ru", "12345", "oleg"));
-        Response registrationRequest = UserRegisterRequest(new UserAuthorizationData("zhumzhumreg@mail.ru", "12345", "oleg"));
+        UserRegisterRequest(new UserAuthorizationData(email, password, name));
+        Response registrationRequest = UserRegisterRequest(new UserAuthorizationData(email, password, name));
         registrationRequest
                 .then()
                 .statusCode(403)
@@ -60,9 +77,6 @@ public class UserApiRegistrationTest extends UserApiPrototype {
                 .assertThat()
                 .body("success", equalTo(false))
                 .and().assertThat().body("message", equalTo("User already exists"));
-        Response authRequest = UserLoginRequest(new UserAuthorizationData("zhumzhumreg@mail.ru", "12345"));
-        String accessToken = authRequest.body().as(UserAuthorizationData.class).getAccessToken();
-        DeleteUserRequest(accessToken);
     }
 
     @Test
@@ -70,7 +84,7 @@ public class UserApiRegistrationTest extends UserApiPrototype {
     @Severity(SeverityLevel.CRITICAL)
     @Description("Проверка регистрации пользователя без указания 1 поля")
     public void TestRegistrationUserWithoutOneParameter() {
-        Response registrationRequest = UserRegisterRequest(new UserAuthorizationData("zhumzhumreg@mail.ru",  "oleg"));
+        Response registrationRequest = UserRegisterRequest(new UserAuthorizationData(email, password));
         registrationRequest
                 .then()
                 .statusCode(403)

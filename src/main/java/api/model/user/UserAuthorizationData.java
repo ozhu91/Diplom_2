@@ -3,14 +3,17 @@ package api.model.user;
 public class UserAuthorizationData {
 
     private User user;
+
     private String email;
 
     private String password;
 
     private String name;
 
-    private String success;
+    private boolean success;
+
     private String accessToken;
+
     private String refreshToken;
 
     public UserAuthorizationData(String email, String password) {
@@ -47,6 +50,7 @@ public class UserAuthorizationData {
     public void setName(String name) {
         this.name = name;
     }
+
     public User getUser() {
         return user;
     }
@@ -55,11 +59,11 @@ public class UserAuthorizationData {
         this.user = user;
     }
 
-    public String getSuccess() {
+    public boolean getSuccess() {
         return success;
     }
 
-    public void setSuccess(String success) {
+    public void setSuccess(boolean success) {
         this.success = success;
     }
 

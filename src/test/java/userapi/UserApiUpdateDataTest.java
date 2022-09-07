@@ -11,10 +11,7 @@ import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.response.Response;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.Timeout;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -24,6 +21,12 @@ public class UserApiUpdateDataTest extends UserApiPrototype {
     @Rule
     public Timeout globalTimeout =  Timeout.seconds(0);
 
+    String email = "zhumzhumupdate@mail.ru";
+
+    String password = "12345";
+
+    String name = "Oleg";
+
     @BeforeClass
     public static void setUp() {
         RestAssured.baseURI = "https://stellarburgers.nomoreparties.site";
@@ -32,36 +35,35 @@ public class UserApiUpdateDataTest extends UserApiPrototype {
                 .filter(new AllureRestAssured());
     }
 
+    @After
+    public void methodAfter() {
+        Response login = UserLoginRequest(new UserAuthorizationData( email, password));
+        String accessToken;
+        if(login.thenReturn().body().as(UserAuthorizationData.class).getSuccess() == false) {
+            Response registrationRequest = UserRegisterRequest(new UserAuthorizationData(email, password, name));
+            accessToken = registrationRequest.thenReturn().body().as(UserAuthorizationData.class).getAccessToken();
+        } else {
+            accessToken = login.thenReturn().body().as(UserAuthorizationData.class).getAccessToken();
+        }
+        DeleteUserRequest(accessToken);
+    }
+
     @Test
     @DisplayName("Test user email update ")
     @Severity(SeverityLevel.BLOCKER)
     @Description("Проверка изменения email пользователя")
     public void TestUpdateUserEmail() {
-        UserRegisterRequest(new UserAuthorizationData("zhumzhum@mail.ru", "12345", "oleg"));
-        Response authRequestBefore = UserLoginRequest(new UserAuthorizationData("zhumzhum@mail.ru", "12345"));
-        String accessTokenBefore = authRequestBefore.body().as(UserAuthorizationData.class).getAccessToken();
-        Response UpdateRequest = UpdateUserRequest(accessTokenBefore, new UserUpdateData("zhumzhumafter@mail.ru", "12345"));
-        // Проверка на корректность ответа запроса на изменение email пользователя
-        UpdateRequest
-                .then()
-                .statusCode(200)
-                .assertThat()
-                .body("success", equalTo(true));
+        UserRegisterRequest(new UserAuthorizationData(email, password, name));
+        Response authRequestBefore = UserLoginRequest(new UserAuthorizationData(email, password));
+        String accessTokenBefore = authRequestBefore.thenReturn().body().as(UserAuthorizationData.class).getAccessToken();
+        UpdateUserRequest(accessTokenBefore, new UserUpdateData("zhumzhumafter@mail.ru", "12345"));
         Response authRequestAfter = UserLoginRequest(new UserAuthorizationData("zhumzhumafter@mail.ru", "12345"));
-        // Проверка на корректность ответа запроса авторизации пользователя под новым email
         authRequestAfter
                 .then()
                 .statusCode(200)
                 .assertThat()
                 .body("success", equalTo(true));
-        Assert.assertEquals("zhumzhumafter@mail.ru", authRequestAfter.body().as(UserAuthorizationData.class).getUser().getEmail());
-        Response authRequestOld = UserLoginRequest(new UserAuthorizationData("zhumzhum@mail.ru", "12345"));
-        // Проверка на отсутствие пользователя под старым email
-        authRequestOld
-                .then()
-                .statusCode(401)
-                .assertThat()
-                .body("success", equalTo(false));
+        Assert.assertEquals("zhumzhumafter@mail.ru", authRequestAfter.thenReturn().body().as(UserAuthorizationData.class).getUser().getEmail());
         String accessTokenAfter = authRequestAfter.body().as(UserAuthorizationData.class).getAccessToken();
         DeleteUserRequest(accessTokenAfter);
     }
@@ -71,31 +73,18 @@ public class UserApiUpdateDataTest extends UserApiPrototype {
     @Severity(SeverityLevel.BLOCKER)
     @Description("Проверка изменения пароля пользователя")
     public void TestUpdateUserPassword() {
-        UserRegisterRequest(new UserAuthorizationData("zhumzhum@mail.ru", "12345", "oleg"));
-        Response authRequestBefore = UserLoginRequest(new UserAuthorizationData("zhumzhum@mail.ru", "12345"));
-        String accessTokenBefore = authRequestBefore.body().as(UserAuthorizationData.class).getAccessToken();
-        // Проверка на корректность ответа запроса на изменение пароля  пользователя
-        Response UpdateRequest = UpdateUserRequest(accessTokenBefore, new UserUpdateData("zhumzhum@mail.ru", "55555"));
-        UpdateRequest
-                .then()
-                .statusCode(200)
-                .assertThat()
-                .body("success", equalTo(true));
-        // Проверка на корректность ответа запроса авторизации пользователя под новым паролем
-        Response authRequestAfter = UserLoginRequest(new UserAuthorizationData("zhumzhum@mail.ru", "55555"));
-        authRequestAfter
-                .then()
-                .statusCode(200)
-                .assertThat()
-                .body("success", equalTo(true));
-        // Проверка на отсутствие пользователя под старым паролем
-        Response authRequestOld = UserLoginRequest(new UserAuthorizationData("zhumzhum@mail.ru", "12345"));
+        UserRegisterRequest(new UserAuthorizationData(email, password, name));
+        Response authRequestBefore = UserLoginRequest(new UserAuthorizationData(email, password));
+        String accessTokenBefore = authRequestBefore.thenReturn().body().as(UserAuthorizationData.class).getAccessToken();
+        UpdateUserRequest(accessTokenBefore, new UserUpdateData(email, "55555"));
+        Response authRequestAfter = UserLoginRequest(new UserAuthorizationData(email, "55555"));
+        Response authRequestOld = UserLoginRequest(new UserAuthorizationData(email, password));
         authRequestOld
                 .then()
                 .statusCode(401)
                 .assertThat()
                 .body("success", equalTo(false));
-        String accessTokenAfter = authRequestAfter.body().as(UserAuthorizationData.class).getAccessToken();
+        String accessTokenAfter = authRequestAfter.thenReturn().body().as(UserAuthorizationData.class).getAccessToken();
         DeleteUserRequest(accessTokenAfter);
     }
 
@@ -104,17 +93,15 @@ public class UserApiUpdateDataTest extends UserApiPrototype {
     @Severity(SeverityLevel.BLOCKER)
     @Description("Проверка изменения данных пользователя без авторизации")
     public void TestUpdateUserDataWithoutAuth() {
-        UserRegisterRequest(new UserAuthorizationData("zhumzhum@mail.ru", "12345", "oleg"));
-        Response authRequest = UserLoginRequest(new UserAuthorizationData("zhumzhum@mail.ru", "12345"));
-        // Проверка на корректность ответа запроса на изменение пароля  пользователя
-        Response UpdateRequest = UpdateUserRequest(new UserUpdateData("zhumzhum@mail.ru", "55555"));
+        UserRegisterRequest(new UserAuthorizationData(email, password, name));
+        Response authRequest = UserLoginRequest(new UserAuthorizationData(email, password));
+        Response UpdateRequest = UpdateUserRequest(new UserUpdateData(email, "55555"));
         UpdateRequest
                 .then()
                 .statusCode(401)
                 .assertThat()
                 .body("success", equalTo(false));
-
-        String accessToken = authRequest.body().as(UserAuthorizationData.class).getAccessToken();
+        String accessToken = authRequest.thenReturn().body().as(UserAuthorizationData.class).getAccessToken();
         DeleteUserRequest(accessToken);
     }
 }

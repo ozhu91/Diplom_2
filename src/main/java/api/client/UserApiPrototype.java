@@ -2,15 +2,14 @@ package api.client;
 
 import api.model.user.UserAuthorizationData;
 import api.model.user.UserUpdateData;
+import io.qameta.allure.Step;
 import io.restassured.response.Response;
 
 import static io.restassured.RestAssured.given;
 
 public class UserApiPrototype {
 
-    /*
-     * User register
-     * */
+    @Step("Запрос на регистрацию пользователя")
     public Response UserRegisterRequest(UserAuthorizationData data) {
         return given()
                 .headers("Content-type", "application/json")
@@ -20,9 +19,7 @@ public class UserApiPrototype {
                 .post("/api/auth/register");
     }
 
-    /*
-     * User login
-     * */
+    @Step("Запрос на авторизация пользователя пользователя")
     public Response UserLoginRequest(UserAuthorizationData data) {
         return given()
                 .headers("Content-type", "application/json")
@@ -33,9 +30,7 @@ public class UserApiPrototype {
     }
 
 
-    /*
-     * User delete
-     * */
+    @Step("Запрос на удаление пользователя")
     public Response DeleteUserRequest(String accessToken) {
         return given()
                 .headers(
@@ -45,9 +40,7 @@ public class UserApiPrototype {
                 .delete("/api/auth/user");
     }
 
-    /*
-     * User update
-     * */
+    @Step("Запрос на обновление данных пользователя")
     public Response UpdateUserRequest(String accessToken, UserUpdateData data) {
         return given()
                 .headers(
@@ -59,9 +52,7 @@ public class UserApiPrototype {
                 .patch("/api/auth/user");
     }
 
-    /*
-     * User update without auth
-     * */
+    @Step("Запрос на обновление данных пользователя без access token")
     public Response UpdateUserRequest(UserUpdateData data) {
         return given()
                 .headers(
@@ -72,18 +63,4 @@ public class UserApiPrototype {
                 .when()
                 .patch("/api/auth/user");
     }
-
-
-    /*
-     * User getting data
-     * */
-    public Response GetUserRequest(String accessToken) {
-        return given()
-                .headers(
-                        "Authorization", accessToken, "Content-type", "application/json", "Accept",
-                        "/" )
-                .when()
-                .get("/api/auth/user");
-    }
-
 }

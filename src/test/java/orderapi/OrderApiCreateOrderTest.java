@@ -13,9 +13,7 @@ import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.response.Response;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.Timeout;
 
 import java.util.ArrayList;
@@ -26,8 +24,16 @@ public class OrderApiCreateOrderTest {
 
     @Rule
     public Timeout globalTimeout =  Timeout.seconds(0);
+
     OrderApiPrototype orderApi = new OrderApiPrototype();
+
     UserApiPrototype userApi = new UserApiPrototype();
+
+    String email = "zhumzhumorder@mail.ru";
+
+    String password = "12345";
+
+    String name = "Oleg";
 
     @BeforeClass
     public static void setUp() {
@@ -37,14 +43,27 @@ public class OrderApiCreateOrderTest {
                 .filter(new AllureRestAssured());
     }
 
+    @After
+    public void methodAfter() {
+        Response login = userApi.UserLoginRequest(new UserAuthorizationData( email, password));
+        String accessToken;
+        if(login.thenReturn().body().as(UserAuthorizationData.class).getSuccess() == false) {
+            Response registrationRequest = userApi.UserRegisterRequest(new UserAuthorizationData(email, password, name));
+            accessToken = registrationRequest.thenReturn().body().as(UserAuthorizationData.class).getAccessToken();
+        } else {
+            accessToken = login.thenReturn().body().as(UserAuthorizationData.class).getAccessToken();
+        }
+        userApi.DeleteUserRequest(accessToken);
+    }
+
     @Test
     @DisplayName("Test create order")
     @Severity(SeverityLevel.CRITICAL)
     @Description("Создание заказа")
     public void TestCreateOrder() {
-        Response registrationRequest = userApi.UserRegisterRequest(new UserAuthorizationData("zhumzhumorder@mail.ru", "12345", "oleg"));
-        String accessToken = registrationRequest.body().as(UserAuthorizationData.class).getAccessToken();
-        Ingredients ingredientsResponse = orderApi.GetIngredientsRequest().body().as(Ingredients.class);
+        Response registrationRequest = userApi.UserRegisterRequest(new UserAuthorizationData(email, password, name));
+        String accessToken = registrationRequest.thenReturn().body().as(UserAuthorizationData.class).getAccessToken();
+        Ingredients ingredientsResponse = orderApi.GetIngredientsRequest().thenReturn().body().as(Ingredients.class);
         ArrayList<String> ingredients = new ArrayList<>();
         String firstIngredient = ingredientsResponse.getData()[1].get_id();
         String SecondIngredient = ingredientsResponse.getData()[2].get_id();
@@ -57,8 +76,6 @@ public class OrderApiCreateOrderTest {
                 .statusCode(200)
                 .and()
                 .body("success", equalTo(true));
-
-        userApi.DeleteUserRequest(accessToken);
     }
 
     @Test
@@ -66,7 +83,7 @@ public class OrderApiCreateOrderTest {
     @Severity(SeverityLevel.CRITICAL)
     @Description("Создание заказа без входа в систему")
     public void TestCreateOrderWithoutAuth(){
-        Ingredients ingredientsResponse = orderApi.GetIngredientsRequest().body().as(Ingredients.class);
+        Ingredients ingredientsResponse = orderApi.GetIngredientsRequest().thenReturn().body().as(Ingredients.class);
         ArrayList<String> ingredients = new ArrayList<>();
         String firstIngredient = ingredientsResponse.getData()[1].get_id();
         String SecondIngredient = ingredientsResponse.getData()[2].get_id();
@@ -86,7 +103,7 @@ public class OrderApiCreateOrderTest {
     @Severity(SeverityLevel.CRITICAL)
     @Description("Создание заказа с некорректным ингредиентом")
     public void TestCreateOrderWithIncorrectIngredient(){
-        Ingredients ingredientsResponse = orderApi.GetIngredientsRequest().body().as(Ingredients.class);
+        Ingredients ingredientsResponse = orderApi.GetIngredientsRequest().thenReturn().body().as(Ingredients.class);
         ArrayList<String> ingredients = new ArrayList<>();
         String firstIngredient = ingredientsResponse.getData()[1].get_id();
         String SecondIngredient = ingredientsResponse.getData()[2].get_id();

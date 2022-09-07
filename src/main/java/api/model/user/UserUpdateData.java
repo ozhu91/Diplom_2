@@ -10,9 +10,7 @@ public class UserUpdateData {
         this.email = email;
     }
 
-    public UserUpdateData() {
-
-    }
+    public UserUpdateData() {}
     public String getEmail() {
         return email;
     }
@@ -28,6 +26,4 @@ public class UserUpdateData {
     public void setPassword(String password) {
         this.password = password;
     }
-
-
 }

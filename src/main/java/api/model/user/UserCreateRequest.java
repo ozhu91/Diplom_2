@@ -9,9 +9,7 @@ public class UserCreateRequest {
     public UserCreateRequest(List<String> ingredients) {
         this.ingredients = ingredients;
     }
-    public UserCreateRequest() {
-
-    }
+    public UserCreateRequest() {}
 
     public List<String> getIngredients() {
         return this.ingredients;

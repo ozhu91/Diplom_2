@@ -2,8 +2,8 @@ package api.model.user;
 
 public class User {
 
-
     private String email;
+
     private String name;
 
     public User(String email, String name){
@@ -11,9 +11,7 @@ public class User {
         this.email = email;
     }
 
-    public User() {
-
-    }
+    public User() {}
 
     public String getEmail() {
         return email;
